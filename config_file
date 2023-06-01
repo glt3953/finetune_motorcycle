@@ -1,0 +1,20 @@
+finetune_cfg = {
+    'framework': 'pytorch',  # 运行框架
+    'task': 'image_classification',  # 运行任务
+    'model': {'type': 'ofa',  # 模型的类型（一般是模型backbone/骨架）这个key下面主要放了如何构建推断的ofa任务
+              'language': 'en',  # 输入输出语言
+              },
+    'pipeline': {'type': 'image_classification'},  # pipeline的类型
+    'dataset': {'column_map': {'text': 'label', 'image': 'image'}}, # 针对数据集合模型预处理预定义的字段不同，这里做一个映射,key是数据集字段名，value是预处理采用的字段名
+    'train': {  # finetune相关配置
+        'max_epochs': 1,  # 训练轮数
+        'dataloader': {'batch_size_per_gpu': 4, 'workers_per_gpu': 0},  # 数据下载器的配置
+        'lr_scheduler': {'name': 'polynomial_decay',  # 学习率配置，不同学习器参数不同。
+                         'warmup_proportion': 0.01,
+                         'lr_end': 1e-07},
+        'lr_scheduler_hook': {'type': 'LrSchedulerHook', 'by_epoch': False}, # ms使用hook进行finetune时各种行为管理，具体来说根据hook是根据step还是epoch以及具体步数进行相应行为的调用
+        'optimizer': {'type': 'AdamW', 'lr': 5e-05, 'weight_decay': 0.01},  # optimizer的配置
+        'criterion': {'name': 'AdjustLabelSmoothedCrossEntropyCriterion'}},  # 这里criterion相当于是计算loss的全部逻辑，仿照了fairseq的写法
+    'evaluation': { 'dataloader': {'batch_size_per_gpu': 4, 'workers_per_gpu': 0}, # eval数据下载器的参数, # 评估时使用的方法，这里是acc
+        'metrics': [{'type': 'accuracy'}]},
+    'preprocessor': []}  # 预处理配置，这里为空（ofa有统一的预处理方式）
